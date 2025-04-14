@@ -4,56 +4,73 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Iterator;
+import java.io.*;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
+        String inputPath = "C:\\Users\\Lenovo\\projects\\ExcelLab\\ExcelLab\\src\\TestExcel.xlsx";
+        String outputPath = "C:\\Users\\Lenovo\\projects\\ExcelLab\\ExcelLab\\src\\Output.xlsx";
+
         try {
-            FileInputStream file = new FileInputStream(new File("C:\\Users\\Lenovo\\projects\\ExcelLab\\ExcelLab\\src\\TestExcel.xlsx"));
+            // Read
+            FileInputStream file = new FileInputStream(new File(inputPath));
+            XSSFWorkbook workbookIn = new XSSFWorkbook(file);
+            XSSFSheet sheetIn = workbookIn.getSheetAt(0);
 
-            // Create Workbook instance holding reference to .xlsx file
-            XSSFWorkbook workbook = new XSSFWorkbook(file);
+            // Output Workbook
+            XSSFWorkbook workbookOut = new XSSFWorkbook();
+            XSSFSheet sheetOut = workbookOut.createSheet("Incremented Ages");
 
-            // Get first sheet from the workbook
-            XSSFSheet sheet = workbook.getSheetAt(0);
+            int rowIndex = 0;
 
-            // Iterate through each row
-            Iterator<Row> rowIterator = sheet.iterator();
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
+            for (Row row : sheetIn) {
+                Row newRow = sheetOut.createRow(rowIndex++);
+                int cellIndex = 0;
 
-                // Iterate through each cell
-                Iterator<Cell> cellIterator = row.cellIterator();
-                while (cellIterator.hasNext()) {
-                    Cell cell = cellIterator.next();
+                for (Cell cell : row) {
+                    Cell newCell = newRow.createCell(cellIndex);
 
-                    // Check the cell type and print accordingly
-                    switch (cell.getCellType()) {
-                        case STRING:
-                            System.out.print(cell.getStringCellValue() + "\t");
-                            break;
-                        case NUMERIC:
-                            System.out.print(cell.getNumericCellValue() + "\t");
-                            break;
-                        case BOOLEAN:
-                            System.out.print(cell.getBooleanCellValue() + "\t");
-                            break;
-                        case FORMULA:
-                            System.out.print(cell.getCellFormula() + "\t");
-                            break;
-                        default:
-                            System.out.print("UNKNOWN\t");
-                            break;
+                    // If last row & numeric type
+                    if (cellIndex == row.getLastCellNum() - 1 && cell.getCellType() == CellType.NUMERIC) {
+                        double newAge = cell.getNumericCellValue() + 1;
+                        newCell.setCellValue(newAge);
+                    } else {
+                        switch (cell.getCellType()) {
+                            case STRING:
+                                newCell.setCellValue(cell.getStringCellValue());
+                                break;
+                            case NUMERIC:
+                                newCell.setCellValue(cell.getNumericCellValue());
+                                break;
+                            case BOOLEAN:
+                                newCell.setCellValue(cell.getBooleanCellValue());
+                                break;
+                            case FORMULA:
+                                newCell.setCellFormula(cell.getCellFormula());
+                                break;
+                            default:
+                                newCell.setCellValue("UNKNOWN");
+                                break;
+                        }
                     }
+
+                    cellIndex++;
                 }
-                System.out.println();
             }
 
-            workbook.close();
+            // Write new
+            FileOutputStream outFile = new FileOutputStream(new File(outputPath));
+            workbookOut.write(outFile);
+
+            // Close
+            outFile.close();
+            workbookIn.close();
+            workbookOut.close();
             file.close();
+
+            System.out.println("Datele au fost scrise în " + outputPath + " cu vârstele incrementate.");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
